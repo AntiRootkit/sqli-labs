@@ -1,0 +1,146 @@
+
+concat 用法
+
+
+// 返回当前数据库的名字
+select database();
+mysql> select database();
+    +------------+
+    | database() |
+    +------------+
+    | security   |
+    +------------+
+    1 row in set (0.00 sec)
+
+
+// 加个括号
+mysql> (select database());
+    +------------+
+    | database() |
+    +------------+
+    | security   |
+    +------------+
+    1 row in set (0.00 sec)
+
+
+// 拼接字符串1
+select concat((select database()));
+mysql> select concat((select database()));
+    +-----------------------------+
+    | concat((select database())) |
+    +-----------------------------+
+    | security                    |
+    +-----------------------------+
+    1 row in set (0.00 sec)
+
+
+// 拼接字符串2 0x3a --> :
+select concat(0x3a,0x3a,(select database()),0x3a,0x3a);
+mysql> select concat(0x3a,0x3a,(select database()),0x3a,0x3a);
+    +-------------------------------------------------+
+    | concat(0x3a,0x3a,(select database()),0x3a,0x3a) |
+    +-------------------------------------------------+
+    | ::security::                                    |
+    +-------------------------------------------------+
+    1 row in set (0.00 sec)
+
+
+// 选出来的列头太长，给个别名
+select concat(0x3a,0x3a,(select database()),0x3a,0x3a) a;
+mysql> select concat(0x3a,0x3a,(select database()),0x3a,0x3a) a;
+    +--------------+
+    | a            |
+    +--------------+
+    | ::security:: |
+    +--------------+
+    1 row in set (0.00 sec)
+
+
+// 拼接一点随机数据上去
+select concat(0x3a,0x3a,(select database()),0x3a,0x3a,floor(rand()*2)) a;
+mysql> select concat(0x3a,0x3a,(select database()),0x3a,0x3a,floor(rand()*2)) a;
++---------------+
+| a             |
++---------------+
+| ::security::1 |
++---------------+
+1 row in set (0.00 sec)
+
+
+// 查询下元列的信息
+select concat(0x3a,0x3a,(select database()),0x3a,0x3a,floor(rand()*2)) a from information_schema.columns;
+mysql> select concat(0x3a,0x3a,(select database()),0x3a,0x3a,floor(rand()*2)) a from information_schema.columns;
++---------------+
+| a             |
++---------------+
+| ::security::0 |
+| ::security::1 |
+| ::security::1 |
+| ::security::1 |
+| ::security::0 |
+...
+| ::security::1 |
+| ::security::0 |
+| ::security::1 |
+| ::security::0 |
++---------------+
+340 rows in set (0.01 sec)
+
+
+// 查询元表的信息
+mysql> select concat(0x3a,0x3a,(select database()),0x3a,0x3a,floor(rand()*2)) a from information_schema.tables;
++---------------+
+| a             |
++---------------+
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::1 |
+| ::security::0 |
+| ::security::0 |
+| ::security::1 |
+| ::security::1 |
+| ::security::0 |
+| ::security::1 |
+| ::security::1 |
+| ::security::1 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::0 |
+| ::security::1 |
+| ::security::1 |
+| ::security::1 |
+| ::security::0 |
+| ::security::0 |
+| ::security::1 |
+| ::security::0 |
+| ::security::1 |
+| ::security::0 |
+| ::security::1 |
+| ::security::0 |
+| ::security::1 |
+| ::security::1 |
+| ::security::1 |
+| ::security::0 |
+| ::security::0 |
+| ::security::1 |
++---------------+
+39 rows in set (0.00 sec)
+
+
+//
+mysql> select count(*), concat(0x3a,0x3a,(select database()),0x3a,0x3a,floor(rand()*2)) a from information_schema.tables group by a;
++----------+---------------+
+| count(*) | a             |
++----------+---------------+
+|       21 | ::security::0 |
+|       18 | ::security::1 |
++----------+---------------+
+2 rows in set (0.01 sec)

